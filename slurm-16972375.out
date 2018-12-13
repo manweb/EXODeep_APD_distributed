@@ -1,0 +1,118 @@
+2018-12-12 00:24:43.031593: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+2018-12-12 00:24:43.027408: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+2018-12-12 00:24:43.034439: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
+E1212 00:24:43.059960755   21857 socket_utils_common_posix.cc:197] check for SO_REUSEPORT: {"created":"@1544603083.059945369","description":"SO_REUSEPORT unavailable on compiling system","file":"external/grpc/src/core/lib/iomgr/socket_utils_common_posix.cc","file_line":165}
+E1212 00:24:43.067958303    5691 socket_utils_common_posix.cc:197] check for SO_REUSEPORT: {"created":"@1544603083.067945306","description":"SO_REUSEPORT unavailable on compiling system","file":"external/grpc/src/core/lib/iomgr/socket_utils_common_posix.cc","file_line":165}
+2018-12-12 00:24:43.062247: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job ps -> {0 -> nid00878:22222}
+2018-12-12 00:24:43.062259: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job worker -> {0 -> localhost:22222, 1 -> nid00880:22222}
+2018-12-12 00:24:43.069485: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job ps -> {0 -> nid00878:22222}
+2018-12-12 00:24:43.069496: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job worker -> {0 -> nid00879:22222, 1 -> localhost:22222}
+E1212 00:24:43.064937513   62221 socket_utils_common_posix.cc:197] check for SO_REUSEPORT: {"created":"@1544603083.064925367","description":"SO_REUSEPORT unavailable on compiling system","file":"external/grpc/src/core/lib/iomgr/socket_utils_common_posix.cc","file_line":165}
+2018-12-12 00:24:43.066453: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job ps -> {0 -> localhost:22222}
+2018-12-12 00:24:43.066464: I tensorflow/core/distributed_runtime/rpc/grpc_channel.cc:222] Initialize GrpcChannelCache for job worker -> {0 -> nid00879:22222, 1 -> nid00880:22222}
+2018-12-12 00:24:43.070076: I tensorflow/core/distributed_runtime/rpc/grpc_server_lib.cc:381] Started server with target: grpc://localhost:22222
+Performing distributed training
+2018-12-12 00:24:43.066016: I tensorflow/core/distributed_runtime/rpc/grpc_server_lib.cc:381] Started server with target: grpc://localhost:22222
+Performing distributed training
+2018-12-12 00:24:43.073366: I tensorflow/core/distributed_runtime/rpc/grpc_server_lib.cc:381] Started server with target: grpc://localhost:22222
+Performing distributed training
+Layer conv0_0:
+	 filter: [5,5,1,16]
+	 stride: [1,1,1,1]
+Layer conv0_0:
+	 filter: [5,5,1,16]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool1
+	 size: [2,3]
+	 activation: relu
+Layer conv2_0:
+	 filter: [5,5,16,32]
+	 stride: [1,1,1,1]
+Layer maxpool1
+	 size: [2,3]
+Layer conv2_0:
+	 filter: [5,5,16,32]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool3
+	 size: [2,3]
+	 activation: relu
+Layer conv4_0:
+	 filter: [5,5,32,64]
+	 stride: [1,1,1,1]
+Layer maxpool3
+	 size: [2,3]
+Layer conv4_0:
+	 filter: [5,5,32,64]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool5
+	 size: [2,4]
+	 activation: relu
+Layer conv6_0:
+	 filter: [5,5,64,128]
+	 stride: [1,1,1,1]
+Layer maxpool5
+	 size: [2,4]
+Layer conv6_0:
+	 filter: [5,5,64,128]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool7
+	 size: [3,3]
+	 activation: relu
+Layer reshape8
+Layer maxpool7
+	 size: [3,3]
+Layer reshape8
+Layer conv9_0:
+	 filter: [1,1,2048,1024]
+	 stride: [1,1,1,1]
+Layer conv9_0:
+	 filter: [1,1,2048,1024]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer dropout10
+	 activation: relu
+Layer conv11_0:
+	 filter: [1,1,1024,256]
+	 stride: [1,1,1,1]
+Layer dropout10
+Layer conv11_0:
+	 filter: [1,1,1024,256]
+	 stride: [1,1,1,1]
+	 activation: relu
+	 activation: relu
+2018-12-12 00:26:15.191170: I tensorflow/core/distributed_runtime/master_session.cc:1161] Start master session 5dbc9fbffe3bb85a with config: 
+2018-12-12 00:26:26.701750: I tensorflow/core/distributed_runtime/master_session.cc:1161] Start master session e48f3b704c46045c with config: 
+2018-12-12 00:27:27.381769: I tensorflow/core/distributed_runtime/master_session.cc:1161] Start master session fa5ac2f33c733198 with config: 
+2018-12-12 00:30:03.862358: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 444 of 1000
+2018-12-12 00:30:13.857899: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 617 of 1000
+2018-12-12 00:30:14.939899: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 141 of 1000
+2018-12-12 00:30:23.892714: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 790 of 1000
+2018-12-12 00:30:24.942353: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 324 of 1000
+2018-12-12 00:30:33.867510: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 910 of 1000
+2018-12-12 00:30:34.934150: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 449 of 1000
+2018-12-12 00:30:38.886726: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:136] Shuffle buffer filled.
+2018-12-12 00:30:44.929798: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:98] Filling up shuffle buffer (this may take a while): 669 of 1000
+loss = 8954.881836
+loss = 7471.674316
+2018-12-12 00:30:54.383727: I tensorflow/core/kernels/data/shuffle_dataset_op.cc:136] Shuffle buffer filled.
+loss = 11740.773438
+loss = 6834.976074
+loss = 6941.139160
+loss = 7460.048340
+loss = 5958.824219
+loss = 6512.341309
+loss = 5810.073730
+OMP: Error #34: System unable to allocate necessary resources for OMP thread:
+OMP: System error #11: Resource temporarily unavailable
+OMP: Hint Try decreasing the value of OMP_NUM_THREADS.
+srun: error: nid00879: task 1: Aborted
+srun: Terminating job step 16972375.0
+loss = 5237.470703
+slurmstepd: error: *** STEP 16972375.0 ON nid00878 CANCELLED AT 2018-12-12T00:31:29 ***
+srun: error: nid00880: task 2: Terminated
+srun: error: nid00878: task 0: Terminated
+srun: Force Terminated job step 16972375.0

@@ -4,27 +4,29 @@ import os
 
 def setup_slurm_cluster(num_ps=1):
 	all_nodes = get_all_nodes()
-	
-	port = get_allowed_port()
-	
-	hostlist = [ ("%s:%i" % (node, port)) for node in all_nodes ] 
-	ps_hosts, worker_hosts = get_parameter_server_and_worker_hosts(hostlist, num_ps=num_ps)
-	
-	
-	proc_id, num_procs = get_slurm_proc_variables()
-	
-	num_tasks = num_procs - num_ps
-	
-	job_name = get_job_name(proc_id, num_ps)
-	
-	task_index = get_task_index(proc_id, job_name, num_ps)
-	
-	cluster_spec = make_cluster_spec(worker_hosts, ps_hosts)
-	
-	server = make_server(cluster_spec, job_name, task_index)
-	
-	return cluster_spec, server, task_index, num_tasks, job_name
+	if not all_nodes:
+		return None, None, 0, None, 'worker'
 
+	port = get_allowed_port()
+
+	hostlist = [ ("%s:%i" % (node, port)) for node in all_nodes ] 
+	ps_hosts, worker_hosts = get_parameter_server_and_worker_hosts(hostlist, num_ps=num_ps)	
+
+	#proc_id, num_procs = get_slurm_proc_variables()
+	proc_id = get_slurm_proc_variables()
+
+	#num_tasks = num_procs - num_ps
+	num_tasks = num_ps
+
+	job_name = get_job_name(proc_id, num_ps)
+
+	task_index = get_task_index(proc_id, job_name, num_ps)
+
+	cluster_spec = make_cluster_spec(worker_hosts, ps_hosts)
+
+	server = make_server(cluster_spec, job_name, task_index)
+
+	return cluster_spec, server, task_index, num_tasks, job_name
 
 def make_server(cluster_spec, job_name, task_index):
 	server = tf.train.Server(cluster_spec, job_name=job_name, task_index=task_index)
@@ -44,8 +46,8 @@ def get_task_index(proc_id, job_name, num_ps):
 
 def get_slurm_proc_variables():
 	proc_id  = int( os.environ['SLURM_PROCID'] )
-	num_procs     = int( os.environ['SLURM_NPROCS'] )
-	return proc_id, num_procs
+	#num_procs     = int( os.environ['SLURM_NPROCS'] )
+	return proc_id#, num_procs
     
 def get_job_name(proc_id, num_ps):
 	if proc_id < num_ps:
@@ -66,8 +68,12 @@ def get_allowed_port():
 	return allowed_port
 
 def get_all_nodes():
-return expand_nodelist( os.environ['SLURM_NODELIST'])
-    
+	try:
+		node_string = os.environ['SLURM_NODELIST']
+		return expand_nodelist(node_string)
+	except:
+		return None
+
 def expand_nodelist(node_string):
 	try:
 		pref, suff  = node_string.split('[')
