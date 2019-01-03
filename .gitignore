@@ -1,1 +1,5 @@
 test*
+slurm-*
+logs/*
+output/*
+*.pyc

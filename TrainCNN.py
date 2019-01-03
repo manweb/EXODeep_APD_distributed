@@ -58,7 +58,7 @@ def get_dataset(filename, flags):
 
 	record_defaults = [[0.0]]*(nFeatures + nLabels)
 	dataset = tf.data.experimental.CsvDataset(filename, record_defaults) \
-			.shuffle(buffer_size=1000) \
+			.shuffle(buffer_size=10000) \
 			.batch(flags.batchSize) \
 			.repeat(flags.numEpochs)
 
@@ -116,7 +116,7 @@ def main(_):
 			# Placeholder for regularization
 			regularization = tf.placeholder(tf.float32)
 		
-			y, reg_l2 = net_utils.build_network(x_image, FLAGS)
+			y, reg_l2 = net_utils.build_network(x_image, FLAGS, is_chief)
 		
 			# Loss function
 			mse = tf.reduce_mean(tf.square(y-y_))
@@ -142,27 +142,31 @@ def main(_):
 		with tf.train.MonitoredTrainingSession(
 							master=target,
 							is_chief=(FLAGS.task_index==0),
-							checkpoint_dir='./logs/',
+							checkpoint_dir='%s/checkpoint/'%FLAGS.outDir,
 							hooks=hooks) as sess:
 			local_step = 0
 			totalTime = time.time()
 			while not sess.should_stop():
-				batch_x, batch_y = sess.run([data_train_x, data_train_y])
-				current_loss, _ = sess.run([mse, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
-
-				if local_step%10 == 0 and is_chief:
-					batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
-					val_loss, glob_step = sess.run([mse, global_step], feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
-
-					option = 'w' if local_step == 0 else 'a'
-
-					f_out_loss = open(lossName, option)
-					f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
-					f_out_loss.close()
-
-					print('local_step: %i, global_step: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, current_loss, val_loss))
-
-				local_step += 1
+				try:
+					batch_x, batch_y = sess.run([data_train_x, data_train_y])
+					current_loss, glob_step, _ = sess.run([mse, global_step, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
+	
+					if glob_step%10 == 0:
+						batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
+						val_loss = sess.run(mse, feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
+	
+						#option = 'w' if local_step == 0 else 'a'
+						option = 'a'
+	
+						f_out_loss = open(lossName, option)
+						f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
+						f_out_loss.close()
+	
+						print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
+	
+					local_step += 1
+				except RuntimeError:
+					break
 
 			totalTime = time.time() - totalTime
 
