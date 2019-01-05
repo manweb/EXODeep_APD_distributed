@@ -8,14 +8,14 @@ To run single machine training, use the following command
 ```
 or use the batch script and specify the number of nodes to be 1
 ```
-> submit_batch.sl -N 1 <options>
+> sbatch -N 1 submit_batch.sl <options>
 ```
 Use command --help to display all available options
 ### Distributed training
 For distributed training specify the number of nodes N > 1 when submitting the job. You can specify the number of parameter serves
 to be used with option --numPS
 ```
-> submit_batch.sl -N 5 --numPS 2 <option>
+> sbatch -N 5 submit_batch.sl --numPS 2 <options>
 ```
 Above command will run the training with 5 nodes of which 2 are parameter servers the remaining 3 the workers
 
