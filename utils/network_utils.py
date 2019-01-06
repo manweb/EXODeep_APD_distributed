@@ -61,7 +61,7 @@ def build_network(x, flags, print_info = True, checkpoint_file = None):
 	current_layer = tf.reshape(current_layer, [-1, nOutputs])
 
 	var = tf.trainable_variables()
-	reg = tf.add_n([tf.nn.l2_loss(v) for v in var if 'W' in v.name])
+	reg = tf.add_n([tf.nn.l2_loss(v) for v in var if 'W' in v.name]) if not checkpoint_file else None
 
 	return current_layer, reg
 

@@ -28,6 +28,7 @@ def parse_args(flags):
 	parser.add_argument('--trainingSet', type=str, default='')
 	parser.add_argument('--testSet', type=str, default='')
 	parser.add_argument('--savePredPlots', action='store_true')
+	parser.add_argument('--numPS', type=int, default=1)
 
 	args = parser.parse_args()
 
@@ -43,6 +44,7 @@ def parse_args(flags):
 	flags.DEFINE_boolean('trainEnergy', args.trainEnergy, 'Train on energy')
 	flags.DEFINE_string('trainingSet', args.trainingSet, 'Filename of the training set')
 	flags.DEFINE_string('testSet', args.testSet, 'Filename of the test set')
+	flags.DEFINE_integer('numPS', args.numPS, 'Number of parameter servers')
 
 	print("#################################################")
 	print("  Training neural network with")
@@ -58,7 +60,7 @@ def get_dataset(filename, flags):
 
 	record_defaults = [[0.0]]*(nFeatures + nLabels)
 	dataset = tf.data.experimental.CsvDataset(filename, record_defaults) \
-			.shuffle(buffer_size=10000) \
+			.shuffle(buffer_size=1000) \
 			.batch(flags.batchSize) \
 			.repeat(flags.numEpochs)
 
@@ -80,7 +82,7 @@ def main(_):
 	parse_args(flags)
 
 	# Create cluster specification
-	cluster, server, FLAGS.task_index, num_tasks, FLAGS.job_name = setup_slurm_cluster(num_ps = 1)
+	cluster, server, FLAGS.task_index, num_tasks, FLAGS.job_name = setup_slurm_cluster(num_ps = FLAGS.numPS)
 
 	is_chief = (FLAGS.job_name == 'worker' and FLAGS.task_index == 0)
 

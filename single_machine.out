@@ -1,0 +1,66 @@
+#################################################
+  Training neural network with
+	h:		False
+	help:		False
+	helpfull:		False
+	helpshort:		False
+	job_name:		None
+	task_index:		0
+	optimizer:		Adam
+	numEpochs:		None
+	batchSize:		128
+	maxTrainSteps:		100
+	learningRate:		0.001
+	regTerm:		1e-07
+	dropout:		1.0
+	outDir:		./output/
+	model:		
+	trainEnergy:		False
+	trainingSet:		/global/cscratch1/sd/maweber/APDWFSignalsEnergyThreshold_Flattened_Merged_Train_121417.csv
+	testSet:		/global/cscratch1/sd/maweber/APDWFSignalsEnergyThreshold_Flattened_Merged_Test_121417.csv
+#################################################
+Performing single machine training
+Layer conv0_0:
+	 filter: [5,5,1,16]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool1
+	 size: [2,3]
+Layer conv2_0:
+	 filter: [5,5,16,32]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool3
+	 size: [2,3]
+Layer conv4_0:
+	 filter: [5,5,32,64]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool5
+	 size: [2,4]
+Layer conv6_0:
+	 filter: [5,5,64,128]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer maxpool7
+	 size: [3,3]
+Layer reshape8
+Layer conv9_0:
+	 filter: [1,1,2048,1024]
+	 stride: [1,1,1,1]
+	 activation: relu
+Layer dropout10
+Layer conv11_0:
+	 filter: [1,1,1024,256]
+	 stride: [1,1,1,1]
+	 activation: relu
+local_step: 9, global_step: 10, worker_task: 0, train loss = 5906.906250, validation loss = 7327.496094
+local_step: 19, global_step: 20, worker_task: 0, train loss = 4357.647949, validation loss = 8797.109375
+local_step: 29, global_step: 30, worker_task: 0, train loss = 2878.563721, validation loss = 5681.885254
+local_step: 39, global_step: 40, worker_task: 0, train loss = 1935.365845, validation loss = 3304.856445
+local_step: 49, global_step: 50, worker_task: 0, train loss = 1499.183228, validation loss = 2426.360352
+local_step: 59, global_step: 60, worker_task: 0, train loss = 964.510986, validation loss = 1891.151978
+local_step: 69, global_step: 70, worker_task: 0, train loss = 851.758850, validation loss = 1783.004028
+local_step: 79, global_step: 80, worker_task: 0, train loss = 794.785889, validation loss = 1486.165527
+local_step: 89, global_step: 90, worker_task: 0, train loss = 697.180481, validation loss = 1393.120605
+Done training. Total time = 943.951598s
