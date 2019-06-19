@@ -14,27 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ver=$(sudo pip list | grep -E '^tensorflow \(' | grep -oE '[0-9]+\.[0-9]+')
-if [[ $ver != '1.2' ]]; then
-  echo "TF${ver} currently has a compatibility issue."
-  echo "Downgrading to TF1.2.1 as a tentative workaround..."
-  sudo pip install tensorflow==1.2.1
-fi
+#ver=$(sudo pip list | grep -E '^tensorflow \(' | grep -oE '[0-9]+\.[0-9]+')
+#if [[ $ver != '1.2' ]]; then
+#  echo "TF${ver} currently has a compatibility issue."
+#  echo "Downgrading to TF1.2.1 as a tentative workaround..."
+#  sudo pip install tensorflow==1.2.1
+#fi
 
 cd $(dirname $0)
 GIT_REPOSITORY=$1
 GIT_BRANCH=$2
 ENTRY_POINT=$3
 TRAIN_SCRIPT=$4
-TRAIN_ARGS=$5
+TRAIN_ARGS=${@:5}
 
-ROLE=$(hostname | awk -F'-' '{ print $1 }')
-INDEX=$(hostname | awk -F'-' '{ print $2 }')
+ROLE=$(hostname | awk -F'-' '{ print $2 }')
+INDEX=$(hostname | awk -F'-' '{ print $3 }')
 
 export TF_CONFIG=$(sed "s/__INDEX__/$INDEX/;s/__ROLE__/$ROLE/" tf_config.json)
 export PYTHONPATH="$PWD":"${PYTHONPATH}"
 
 git clone -b $GIT_BRANCH $GIT_REPOSITORY
 cd $ENTRY_POINT
+mkdir "output/"
 
-python $TRAIN_SCRIPT $TRAIN_ARGS
+echo "Ready to train"
+echo $TF_CONFIG
+echo $TRAIN_SCRIPT $TRAIN_ARGS
+
+#python3 $TRAIN_SCRIPT $TRAIN_ARGS

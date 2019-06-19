@@ -15,34 +15,42 @@
 # limitations under the License.
 
 MAXWORKERS=5
-WORKDIR=/tmp/workdir
+WORKDIR="/tmp/workdir"
 
-if [[ $# -lt 1 ]]; then
-  PROJECT_ID=$(gcloud config list project --format "value(core.project)")
-  BUCKET="gs://${PROJECT_ID}-ml"
-else
-  BUCKET=$1
-fi
+VM_PREFIX=$1
+NUM_PS=$2
+NUM_WORKERS=$3
+BUCKET=$4
 
-JOBNAME=job_$(date -u +%y%m%d_%H%M%S)
-DATADIR=${BUCKET}/data
-OUTDIR=${BUCKET}/${JOBNAME}
+#if [[ $# -lt 1 ]]; then
+#  PROJECT_ID=$(gcloud config list project --format "value(core.project)")
+#  BUCKET="gs://${PROJECT_ID}-ml"
+#else
+#  BUCKET=$1
+#fi
+
+JOBNAME="job_$(date -u +%y%m%d_%H%M%S)"
+DATADIR="${BUCKET}/data"
+OUTDIR="${BUCKET}/${JOBNAME}"
+
+echo $JOBNAME
+echo $DATADIR
 
 GIT_REPOSITORY="https://github.com/manweb/EXODeep_APD_distributed.git"
 GIT_BRANCH="GCloud"
 ENTRY_POINT="EXODeep_APD_distributed"
 TRAIN_SCRIPT="TrainCNN.py"
-TRAIN_ARGS="--batchSize 16 --maxTrainSteps 100 --trainingSet $DATADIR/Phase1_train.csv --testSet $DATADIR/Phase1_test.csv"
+TRAIN_ARGS="--batchSize 16 --maxTrainSteps 100 --trainingSet $DATADIR/Phase1_Train.csv --testSet $DATADIR/Phase1_Test.csv"
 
-pushd $(dirname $0) >/dev/null
+#pushd $(dirname $0) >/dev/null
 
 # Force stop existing jobs
 echo "Force stop existing jobs."
 ./stop-training.sh
 
 # Get the number of nodes
-NUM_PS=$(gcloud compute instances list | grep -E '^ps-[0-9]+ ' | wc -l)
-NUM_WORKER=$(gcloud compute instances list | grep -E '^worker-[0-9]+ ' | wc -l)
+NUM_PS=$(gcloud compute instances list | grep -E '^manuel-ps-[0-9]+ ' | wc -l)
+NUM_WORKER=$(gcloud compute instances list | grep -E '^manuel-worker-[0-9]+ ' | wc -l)
 
 NUM_PS=$(( NUM_PS - 1 ))
 NUM_WORKER=$(( NUM_WORKER - 1 ))
@@ -55,18 +63,18 @@ fi
 ps_entry="\"ps\": ["
 for i in $(seq 0 $NUM_PS); do
   if [[ ! $i -eq $NUM_PS ]]; then
-    ps_entry="${ps_entry}\"ps-${i}:2222\", "
+    ps_entry="${ps_entry}\"manuel-ps-${i}:2222\", "
   else
-    ps_entry="${ps_entry}\"ps-${i}:2222\"],"
+    ps_entry="${ps_entry}\"manuel-ps-${i}:2222\"],"
   fi
 done
 
 worker_entry="\"worker\": ["
 for i in $(seq 0 $NUM_WORKER); do
   if [[ ! $i -eq $NUM_WORKER ]]; then
-    worker_entry="${worker_entry}\"worker-${i}:2222\", "
+    worker_entry="${worker_entry}\"manuel-worker-${i}:2222\", "
   else
-    worker_entry="${worker_entry}\"worker-${i}:2222\"],"
+    worker_entry="${worker_entry}\"manuel-worker-${i}:2222\"],"
   fi
 done
 
@@ -76,7 +84,6 @@ cat <<EOF > /tmp/tf_config.json
   "cluster": {
     ${ps_entry}
     ${worker_entry}
-    "master": ["master-0:2222"]
   },
   "task": {
     "index": __INDEX__,
@@ -90,40 +97,43 @@ echo "Start a training job."
 # Start parameter servers in the background
 for  i in $(seq 0 $NUM_PS); do
   echo "Starting ps-${i}..."
-  gcloud compute ssh ps-${i} --command "rm -rf $WORKDIR"
-  gcloud compute ssh ps-${i} --command "mkdir -p $WORKDIR"
-  gcloud beta compute scp --recurse \
+  gcloud compute ssh manuel-ps-${i} --zone us-central1-b --command "rm -rf $WORKDIR"
+  gcloud compute ssh manuel-ps-${i} --zone us-central1-b --command "mkdir -p $WORKDIR"
+  gcloud beta compute scp --recurse --zone us-central1-b \
     /tmp/tf_config.json distributed-training.sh \
-    ps-${i}:$WORKDIR
-  gcloud compute ssh ps-${i} --command "$WORKDIR/distributed-training.sh $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS" &
+    manuel-ps-${i}:$WORKDIR
+  gcloud compute ssh manuel-ps-${i} --zone us-central1-b --command "chmod +x $WORKDIR/distributed-training.sh"
+  gcloud compute ssh manuel-ps-${i} --zone us-central1-b --command "$WORKDIR/distributed-training.sh $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS" &
 done
 
 # Start workers in the background
-for  i in $(seq 0 $NUM_WORKER); do
+for  i in $(seq 1 $NUM_WORKER); do
   echo "Starting worker-${i}..."
-  gcloud compute ssh worker-${i} --command "rm -rf $WORKDIR"
-  gcloud compute ssh worker-${i} --command "mkdir -p $WORKDIR"
-  gcloud beta compute scp --recurse \
+  gcloud compute ssh manuel-worker-${i} --zone us-central1-b --command "rm -rf $WORKDIR"
+  gcloud compute ssh manuel-worker-${i} --zone us-central1-b --command "mkdir -p $WORKDIR"
+  gcloud beta compute scp --recurse --zone us-central1-b \
     /tmp/tf_config.json distributed-training.sh \
-    worker-${i}:$WORKDIR
-  gcloud compute ssh worker-${i} --command "$WORKDIR/distributed-training.sh $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS" &
+    manuel-worker-${i}:$WORKDIR
+  gcloud compute ssh manuel-worker-${i} --zone us-central1-b --command "chmod +x $WORKDIR/distributed-training.sh"
+  gcloud compute ssh manuel-worker-${i} --zone us-central1-b --command "$WORKDIR/distributed-training.sh $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS" &
 done
 
 # Start a master
-echo "Starting master-0..."
-gcloud compute ssh master-0 --command "rm -rf $WORKDIR"
-gcloud compute ssh master-0 --command "mkdir -p $WORKDIR"
-gcloud beta compute scp --recurse \
+echo "Starting worker-0..."
+gcloud compute ssh manuel-worker-0 --zone us-central1-b --command "rm -rf $WORKDIR"
+gcloud compute ssh manuel-worker-0 --zone us-central1-b --command "mkdir -p $WORKDIR"
+gcloud beta compute scp --recurse --zone us-central1-b \
   /tmp/tf_config.json distributed-training.sh \
-  master-0:$WORKDIR
-gcloud compute ssh master-0 --command "$WORKDIR/distributed-training.ch $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS"
+  manuel-worker-0:$WORKDIR
+gcloud compute ssh manuel-worker-0 --zone us-central1-b --command "chmod +x $WORKDIR/distributed-training.sh"
+gcloud compute ssh manuel-worker-0 --zone us-central1-b --command "$WORKDIR/distributed-training.sh $GIT_REPOSITORY $GIT_BRANCH $ENTRY_POINT $TRAIN_SCRIPT $TRAIN_ARGS"
 
 # Cleanup
 echo "Done. Force stop remaining processes."
 ./stop-training.sh
 
-ORIGIN=$(gsutil ls $BUCKET/$JOBNAME/export/Servo | tail -1)
-echo ""
-echo "Trained model is stored in $ORIGIN"
+#ORIGIN=$(gsutil ls $BUCKET/$JOBNAME/export/Servo | tail -1)
+#echo ""
+#echo "Trained model is stored in $ORIGIN"
 
-popd >/dev/null
+#popd >/dev/null

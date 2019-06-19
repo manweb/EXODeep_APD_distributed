@@ -5,7 +5,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import os
+import json
 import time
+from subprocess import check_output
+from sys import stdout
 import utils.network_utils as net_utils
 from utils.cluster_utils import setup_slurm_cluster
 from utils.display import APDDisplay
@@ -82,34 +85,36 @@ def main(_):
 	parse_args(flags)
 
 	# Create cluster specification
-	cluster, server, FLAGS.task_index, num_tasks, FLAGS.job_name = setup_slurm_cluster(num_ps = FLAGS.numPS)
+	#cluster, server, FLAGS.task_index, num_tasks, FLAGS.job_name = setup_slurm_cluster(num_ps = FLAGS.numPS)
+	
+	# Get cluster specification
+	tf_config = os.environ.get('TF_CONFIG')
+	# If TF_CONFIG is not available, run single machine training
+	if tf_config:
+		tf_config_json = json.loads(tf_config)
+		cluster = tf_config_json.get('cluster')
+		FLAGS.job_name = tf_config_json.get('task', {}).get('type')
+		FLAGS.task_index = tf_config_json.get('task', {}).get('index')
+		is_chief = FLAGS.job_name == 'worker' and FLAGS.task_index == 0
 
-        # Get cluster specification
-        tf_config = os.environ.get('TF_CONFIG')
-        # If TF_CONFIG is not available, run single machine training
-        if tf_config:
-            tf_config_json = json.loads(tf_config)
-            cluster = tf_config_json.get('cluster')
-            FLAGS.job_name = tf_config_json.get('task', {}).get('type')
-            FLAGS.task_index = tf_config_json.get('task', {}).get('index')
-            is_chief = FLAGS.job_name == 'master'
+		cluster_spec = tf.train.ClusterSpec(cluster)
+		server = tf.train.Server(cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
+	else:
+		cluster_spec = None
+		is_chief = True
+		FLAGS.job_name = 'worker'
+		FLAGS.task_index = 0
 
-            cluster_spec = tf.train.ClusterSpec(cluster)
-            server = tf.train.Server(cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
-        else:
-            cluster_spec = None
-            is_chief = True
-
-	if cluster and is_chief:
+	if cluster_spec and is_chief:
 		print('Performing distributed training')
 	elif is_chief:
 		print('Performing single machine training')
 
 	if FLAGS.job_name == 'ps':
 		server.join()
-	elif FLAGS.job_name in ['worker', 'master']:
+	elif FLAGS.job_name == 'worker':
 		if cluster_spec:
-			worker_device = '/job:%s/task:%d'%(FLAGS.job_name, FLAGS.task_index)
+			worker_device = '/job:worker/task:%d'%FLAGS.task_index
 			device = tf.train.replica_device_setter(worker_device=worker_device, cluster=cluster_spec)
 			target = server.target
 		else:
@@ -146,6 +151,9 @@ def main(_):
 			
 			global_step = tf.train.get_or_create_global_step()
 			train_step = opt.minimize(loss, global_step=global_step)
+			
+			#train_loss_summary = tf.summary.scalar('loss', loss)
+			#val_loss_summary = tf.summary.scalar('val_loss', loss)
 	
 		# Create dataset
 		data_train_x, data_train_y = get_dataset(FLAGS.trainingSet, FLAGS)
@@ -162,23 +170,33 @@ def main(_):
 							hooks=hooks) as sess:
 			local_step = 0
 			totalTime = time.time()
+			#summary_writer = tf.summary.FileWriter(FLAGS.outDir + '/checkpoint', sess.graph)
 			while not sess.should_stop():
 				try:
 					batch_x, batch_y = sess.run([data_train_x, data_train_y])
+					#current_loss, glob_step, train_summ, _ = sess.run([mse, global_step, train_loss_summary, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
 					current_loss, glob_step, _ = sess.run([mse, global_step, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
 	
 					if glob_step%10 == 0:
 						batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
+						#val_loss, val_summ = sess.run([mse, val_loss_summary], feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y), regularization: FLAGS.regTerm})
 						val_loss = sess.run(mse, feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
+
+						if is_chief:
+							#summary_writer.add_summary(train_summ, glob_step)
+							#summary_writer.add_summary(val_summ, glob_step)
 	
-						#option = 'w' if local_step == 0 else 'a'
-						option = 'a'
+							#option = 'w' if local_step == 0 else 'a'
+							option = 'a'
 	
-						f_out_loss = open(lossName, option)
-						f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
-						f_out_loss.close()
+							f_out_loss = open(lossName, option)
+							f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
+							f_out_loss.close()
 	
-						print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
+							print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
+
+						# Upload checkpoint to bucket
+						check_output(['gsutil -m', 'cp', '%s/checkpoint/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/checkpoint/'], stderr=stdout)
 	
 					local_step += 1
 				except RuntimeError:
