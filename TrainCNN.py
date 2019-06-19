@@ -84,7 +84,21 @@ def main(_):
 	# Create cluster specification
 	cluster, server, FLAGS.task_index, num_tasks, FLAGS.job_name = setup_slurm_cluster(num_ps = FLAGS.numPS)
 
-	is_chief = (FLAGS.job_name == 'worker' and FLAGS.task_index == 0)
+        # Get cluster specification
+        tf_config = os.environ.get('TF_CONFIG')
+        # If TF_CONFIG is not available, run single machine training
+        if tf_config:
+            tf_config_json = json.loads(tf_config)
+            cluster = tf_config_json.get('cluster')
+            FLAGS.job_name = tf_config_json.get('task', {}).get('type')
+            FLAGS.task_index = tf_config_json.get('task', {}).get('index')
+            is_chief = FLAGS.job_name == 'master'
+
+            cluster_spec = tf.train.ClusterSpec(cluster)
+            server = tf.train.Server(cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
+        else:
+            cluster_spec = None
+            is_chief = True
 
 	if cluster and is_chief:
 		print('Performing distributed training')
@@ -93,10 +107,10 @@ def main(_):
 
 	if FLAGS.job_name == 'ps':
 		server.join()
-	elif FLAGS.job_name == 'worker':
-		if cluster:
-			worker_device = '/job:worker/task:%d'%FLAGS.task_index
-			device = tf.train.replica_device_setter(worker_device=worker_device, cluster=cluster)
+	elif FLAGS.job_name in ['worker', 'master']:
+		if cluster_spec:
+			worker_device = '/job:%s/task:%d'%(FLAGS.job_name, FLAGS.task_index)
+			device = tf.train.replica_device_setter(worker_device=worker_device, cluster=cluster_spec)
 			target = server.target
 		else:
 			device = None
@@ -143,7 +157,7 @@ def main(_):
 	
 		with tf.train.MonitoredTrainingSession(
 							master=target,
-							is_chief=(FLAGS.task_index==0),
+							is_chief=is_chief,
 							checkpoint_dir='%s/checkpoint/'%FLAGS.outDir,
 							hooks=hooks) as sess:
 			local_step = 0
