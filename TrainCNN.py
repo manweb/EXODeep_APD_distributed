@@ -112,7 +112,7 @@ def main(_):
 
 	if FLAGS.job_name == 'ps':
 		server.join()
-                print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
+		print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
 	elif FLAGS.job_name == 'worker':
 		if cluster_spec:
 			worker_device = '/job:worker/task:%d'%FLAGS.task_index
@@ -121,8 +121,8 @@ def main(_):
 		else:
 			device = None
 			target = ''
-
-                print('\n\n\n\n******************\nThis is the WORKER job_name: {}, task_index: {}, target: {}, is_chief: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index, target, is_chief))
+			
+			print('\n\n\n\n******************\nThis is the WORKER job_name: {}, task_index: {}, target: {}, is_chief: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index, target, is_chief))
 
 		# Create network
 		with tf.device(device):
