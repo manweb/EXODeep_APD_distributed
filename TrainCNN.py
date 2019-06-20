@@ -111,7 +111,7 @@ def main(_):
 		print('Performing single machine training')
 
 	if FLAGS.job_name == 'ps':
-        print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
+		print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
 		server.join()
 	elif FLAGS.job_name == 'worker':
 		if cluster_spec:
