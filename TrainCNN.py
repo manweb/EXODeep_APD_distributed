@@ -117,8 +117,8 @@ def main(_):
 		print('Performing single machine training')
 
 	if FLAGS.job_name == 'ps':
-		server.join()
 		print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
+		server.join()
 	elif FLAGS.job_name == 'worker':
 		if cluster_spec:
 			worker_device = '/job:worker/task:%d'%FLAGS.task_index
@@ -128,7 +128,7 @@ def main(_):
 			device = None
 			target = ''
 			
-			print('\n\n\n\n******************\nThis is the WORKER job_name: {}, task_index: {}, target: {}, is_chief: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index, target, is_chief))
+		print('\n\n\n\n******************\nThis is the WORKER job_name: {}, task_index: {}, target: {}, is_chief: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index, target, is_chief))
 
 		# Create network
 		with tf.device(device):
@@ -204,8 +204,11 @@ def main(_):
 	
 							print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
 
-						# Upload checkpoint to bucket
-						check_output(['gsutil', '-m', 'cp', '%s/checkpoint/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/checkpoint/'], stderr=stdout)
+							# Upload checkpoint to bucket
+							try:
+								check_output(['gsutil', '-m', 'cp', '%s/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/'], stderr=stdout)
+							except:
+								print('Upload failed.')
 	
 					local_step += 1
 				except RuntimeError:
