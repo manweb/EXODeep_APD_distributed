@@ -97,6 +97,12 @@ def main(_):
 		FLAGS.task_index = tf_config_json.get('task', {}).get('index')
 		is_chief = FLAGS.job_name == 'worker' and FLAGS.task_index == 0
 
+		print('\n\n\n\n******************\n')
+		print(FLAGS.job_name)
+		print(FLAGS.task_index)
+		print(is_chief)
+		print('\n\n\n\n******************\n')
+
 		cluster_spec = tf.train.ClusterSpec(cluster)
 		server = tf.train.Server(cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
 	else:
