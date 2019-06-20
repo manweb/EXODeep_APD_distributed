@@ -196,7 +196,7 @@ def main(_):
 							print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
 
 						# Upload checkpoint to bucket
-						check_output(['gsutil -m', 'cp', '%s/checkpoint/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/checkpoint/'], stderr=stdout)
+						check_output(['gsutil', '-m cp', '%s/checkpoint/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/checkpoint/'], stderr=stdout)
 	
 					local_step += 1
 				except RuntimeError:
