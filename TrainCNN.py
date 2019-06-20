@@ -97,12 +97,6 @@ def main(_):
 		FLAGS.task_index = tf_config_json.get('task', {}).get('index')
 		is_chief = FLAGS.job_name == 'worker' and FLAGS.task_index == 0
 
-		print('\n\n\n\n******************\n')
-		print(FLAGS.job_name)
-		print(FLAGS.task_index)
-		print(is_chief)
-		print('\n\n\n\n******************\n')
-
 		cluster_spec = tf.train.ClusterSpec(cluster)
 		server = tf.train.Server(cluster_spec, job_name=FLAGS.job_name, task_index=FLAGS.task_index)
 	else:
@@ -117,7 +111,7 @@ def main(_):
 		print('Performing single machine training')
 
 	if FLAGS.job_name == 'ps':
-		print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
+        print('\n\n\n\n******************\nThis is the PS job_name: {}, task_index: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index))
 		server.join()
 	elif FLAGS.job_name == 'worker':
 		if cluster_spec:
@@ -127,7 +121,7 @@ def main(_):
 		else:
 			device = None
 			target = ''
-			
+		
 		print('\n\n\n\n******************\nThis is the WORKER job_name: {}, task_index: {}, target: {}, is_chief: {}\n******************\n\n\n\n'.format(FLAGS.job_name, FLAGS.task_index, target, is_chief))
 
 		# Create network
@@ -182,35 +176,34 @@ def main(_):
 			#summary_writer = tf.summary.FileWriter(FLAGS.outDir + '/checkpoint', sess.graph)
 			while not sess.should_stop():
 				try:
-					batch_x, batch_y = sess.run([data_train_x, data_train_y])
-					#current_loss, glob_step, train_summ, _ = sess.run([mse, global_step, train_loss_summary, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
-					current_loss, glob_step, _ = sess.run([mse, global_step, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
-	
-					if glob_step%10 == 0:
+					glob_step = sess.run(global_step)
+					if is_chief and glob_step%10 == 0:
+						batch_x, batch_y = sess.run([data_train_x, data_train_y])
 						batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
-						#val_loss, val_summ = sess.run([mse, val_loss_summary], feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y), regularization: FLAGS.regTerm})
+						current_loss = sess.run(mse, feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y)})
 						val_loss = sess.run(mse, feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
 
-						if is_chief:
-							#summary_writer.add_summary(train_summ, glob_step)
-							#summary_writer.add_summary(val_summ, glob_step)
-	
-							#option = 'w' if local_step == 0 else 'a'
-							option = 'a'
-	
-							f_out_loss = open(lossName, option)
-							f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
-							f_out_loss.close()
-	
-							print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
+						option = 'a'
+						
+						f_out_loss = open(lossName, option)
+						f_out_loss.write(','.join(np.char.mod('%f', np.array([local_step, glob_step, current_loss, val_loss])))+'\n')
+						f_out_loss.close()
+						
+						print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
 
+						try:
 							# Upload checkpoint to bucket
-							try:
-								check_output(['gsutil', '-m', 'cp', '%s/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/'], stderr=stdout)
-							except:
-								print('Upload failed.')
+							check_output(['gsutil', '-m', 'cp', '%s/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/'], stderr=stdout)
+						except:
+							print('Upload failed.')
+					else:
+					#current_loss, glob_step, train_summ, _ = sess.run([mse, global_step, train_loss_summary, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
+					#summary_writer.add_summary(train_summ, glob_step)
+					#summary_writer.add_summary(val_summ, glob_step)
+						batch_x, batch_y = sess.run([data_train_x, data_train_y])
+						_ = sess.run(train_step, feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
 	
-					local_step += 1
+						local_step += 1
 				except RuntimeError:
 					break
 
