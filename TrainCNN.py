@@ -177,8 +177,8 @@ def main(_):
 			#summary_writer = tf.summary.FileWriter(FLAGS.outDir + '/checkpoint', sess.graph)
 			while not sess.should_stop():
 				try:
-					batch_x, batch_y, glob_step = sess.run([data_train_x, data_train_y, global_step])
-					current_loss, _ = sess.run([mse, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
+					batch_x, batch_y = sess.run([data_train_x, data_train_y])
+					current_loss, glob_step, _ = sess.run([mse, global_step, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
 					if local_step%10 == 0:
 						batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
 						val_loss = sess.run(mse, feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
