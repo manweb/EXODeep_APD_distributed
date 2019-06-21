@@ -179,7 +179,7 @@ def main(_):
 				try:
 					batch_x, batch_y, glob_step = sess.run([data_train_x, data_train_y, global_step])
 					current_loss, _ = sess.run([mse, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
-					if is_chief and glob_step%10 == 0:
+					if local_step%10 == 0:
 						batch_val_x, batch_val_y = sess.run([data_val_x, data_val_y])
 						val_loss = sess.run(mse, feed_dict={x: np.transpose(batch_val_x), y_: np.transpose(batch_val_y)})
 
@@ -191,18 +191,18 @@ def main(_):
 						
 						print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f, validation loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss, val_loss))
 
-						try:
+						#try:
 							# Upload checkpoint to bucket
-							check_output(['gsutil', '-m', 'cp', '%s/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/'], stderr=stdout)
-						except:
-							print('Upload failed.')
+						#	check_output(['gsutil', '-m', 'cp', '%s/*'%FLAGS.outDir, 'gs://dl-manuel/TPU/output/'], stderr=stdout)
+						#except:
+						#	print('Upload failed.')
 					#current_loss, glob_step, train_summ, _ = sess.run([mse, global_step, train_loss_summary, train_step], feed_dict={x: np.transpose(batch_x), y_: np.transpose(batch_y), regularization: FLAGS.regTerm})
 					#summary_writer.add_summary(train_summ, glob_step)
 					#summary_writer.add_summary(val_summ, glob_step)
-					elif is_chief:
+					else:
 						print('local_step: %i, global_step: %i, worker_task: %i, train loss = %f'%(local_step, glob_step, FLAGS.task_index, current_loss))
 	
-						local_step += 1
+					local_step += 1
 				except RuntimeError:
 					break
 
