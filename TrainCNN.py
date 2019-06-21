@@ -63,7 +63,7 @@ def get_dataset(filename, flags):
 
 	record_defaults = [[0.0]]*(nFeatures + nLabels)
 	dataset = tf.data.experimental.CsvDataset(filename, record_defaults) \
-			.shuffle(buffer_size=1000) \
+			.shuffle(buffer_size=100) \
 			.batch(flags.batchSize) \
 			.repeat(flags.numEpochs)
 
