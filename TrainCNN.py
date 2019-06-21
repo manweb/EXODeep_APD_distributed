@@ -163,14 +163,14 @@ def main(_):
 		data_val_x, data_val_y = get_dataset(FLAGS.testSet, FLAGS)
 	
 		hooks=[tf.train.StopAtStepHook(last_step=FLAGS.maxTrainSteps),
-				tf.train.CheckpointSaverHook(checkpoint_dir='%s/output/checkpoint/'%FLAGS.outDir, save_steps=10)]
+				tf.train.CheckpointSaverHook(checkpoint_dir=FLAGS.outDir, save_steps=10)]
 
 		lossName = '%s/loss_%.7f_%.7f.csv'%(FLAGS.outDir, FLAGS.regTerm, FLAGS.learningRate)
 	
 		with tf.train.MonitoredTrainingSession(
 							master=target,
 							is_chief=is_chief,
-							checkpoint_dir='%s/output/checkpoint/'%FLAGS.outDir,
+							checkpoint_dir=FLAGS.outDir,
 							hooks=hooks) as sess:
 			local_step = 0
 			totalTime = time.time()
